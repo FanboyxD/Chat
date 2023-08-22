@@ -1,80 +1,65 @@
-import java.io.*;
-import java.net.*;
+// ChatClient.java
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.Scanner;
+import javafx.scene.control.TextArea;
 
-public class Cliente {
-    private String serverIP;
-    private int serverPort;
-    private PrintWriter out;
+public class ChatClient {
 
-    public Cliente(String serverIP, int serverPort) {
-        this.serverIP = serverIP;
-        this.serverPort = serverPort;
-    }
-    
-    public void startClient() {
+    private Socket socket;
+    private PrintWriter writer;
+    private int port;
+    private TextArea chatArea;
+
+    public void connect(String serverIp, int port, TextArea chatArea) {
         try {
-            Socket socket = new Socket(serverIP, serverPort);
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            socket = new Socket(serverIp, port);
+            System.out.println("Conectado al servidor en " + serverIp + ":" + port);
+            this.port = port;
+            this.chatArea = chatArea;
 
-            new Thread(new MessageReceiver(in)).start();
-
-            // Add your code here to handle sending messages from the UI
-            // For example, when the user clicks the "Send" button
+            writer = new PrintWriter(socket.getOutputStream(), true);
+            Thread readerThread = new Thread(new MessageReader(socket));
+            readerThread.start();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    public PrintWriter getPrintWriter() {
-        return out;
+
+    public void sendMessage(String message) {
+        writer.println(message);
     }
-    public static void main(String[] args) {
-        try {
-            BufferedReader userInput = new BufferedReader(new InputStreamReader(System.in));
-            System.out.print("Ingrese la direccion IP: ");
-            String serverIP = userInput.readLine();
-            System.out.print("Ingrese el puerto: ");
-            int serverPort = Integer.parseInt(userInput.readLine());
 
-            Socket socket = new Socket(serverIP, serverPort);
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+    public int getPort() {
+        return port;
+    }
 
-            new Thread(new MessageReceiver(in)).start();
+    private void receiveMessage(String message) {
+        chatArea.appendText("Recibido: " + message + "\n");
+    }
 
-            String message;
-            while ((message = userInput.readLine()) != null) {
-                out.println(message);
+    private class MessageReader implements Runnable {
+        private Socket socket;
 
-                // Respond to the received message
-                System.out.print("Enviado: ");
-                String response = userInput.readLine();
-                out.println(response);
-            }
-
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        public MessageReader(Socket socket) {
+            this.socket = socket;
         }
-    }
-}
 
-class MessageReceiver implements Runnable {
-    private BufferedReader in;
+        @Override
+        public void run() {
+            try {
+                Scanner scanner = new Scanner(socket.getInputStream());
 
-    public MessageReceiver(BufferedReader in) {
-        this.in = in;
-    }
-
-    @Override
-    public void run() {
-        try {
-            String message;
-            while ((message = in.readLine()) != null) {
-                System.out.println("Recibido: " + message);
+                while (scanner.hasNextLine()) {
+                    String message = scanner.nextLine();
+                    if (!message.isEmpty()) {
+                        receiveMessage(message);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 }
