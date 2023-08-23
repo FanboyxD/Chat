@@ -1,8 +1,8 @@
-// ChatApp.java
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -15,6 +15,8 @@ public class ChatApp extends Application {
     private TextArea chatArea;
     private TextField messageField;
     private Label portLabel;
+    private ChoiceBox<Integer> portChoiceBox;
+    private Button sendToButton;
 
     public static void main(String[] args) {
         launch(args);
@@ -27,16 +29,25 @@ public class ChatApp extends Application {
         // Crear componentes de la interfaz gráfica
         chatArea = new TextArea();
         messageField = new TextField();
-        Button sendButton = new Button("Enviar");
+        
         portLabel = new Label("Puerto: -");
 
         // Configurar acción del botón Enviar
-        sendButton.setOnAction(event -> sendMessage());
+        
+
+        // Crear componente ChoiceBox
+        portChoiceBox = new ChoiceBox<>();
+        portChoiceBox.getItems().addAll(12345, 12346, 12347); // Agrega los puertos disponibles
+        portChoiceBox.setValue(12345); // Establece un puerto predeterminado
+
+        // Crear componente Button
+        sendToButton = new Button("Enviar a");
+        sendToButton.setOnAction(event -> sendToPort());
 
         // Crear contenedor principal y agregar componentes
         VBox root = new VBox(10);
         root.setPadding(new Insets(10));
-        root.getChildren().addAll(chatArea, messageField, sendButton, portLabel);
+        root.getChildren().addAll(chatArea, messageField, portLabel, portChoiceBox, sendToButton);
 
         // Crear escena y mostrar ventana
         Scene scene = new Scene(root, 400, 300);
@@ -53,10 +64,12 @@ public class ChatApp extends Application {
         portLabel.setText("Puerto: " + client.getPort());
     }
 
-    private void sendMessage() {
+
+    private void sendToPort() {
+        int targetPort = portChoiceBox.getValue();
         String message = messageField.getText();
-        client.sendMessage(message);
-        chatArea.appendText("Enviado: " + message + "\n");
+        client.sendMessageToPort(message, targetPort);
+        chatArea.appendText("Enviado a puerto " + targetPort + ": " + message + "\n");
         messageField.clear();
     }
 }
