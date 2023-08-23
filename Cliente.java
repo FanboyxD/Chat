@@ -1,4 +1,3 @@
-// ChatClient.java
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -27,8 +26,8 @@ public class ChatClient {
         }
     }
 
-    public void sendMessage(String message) {
-        writer.println(message);
+    public void sendMessageToPort(String message, int targetPort) {
+        writer.println(targetPort + ":" + message);
     }
 
     public int getPort() {
