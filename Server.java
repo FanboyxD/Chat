@@ -3,14 +3,16 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 public class ChatServer {
 
     private static final int STARTING_PORT = 12345;
     private static int nextPort = STARTING_PORT;
-    private static List<PrintWriter> clientWriters = new ArrayList<>();
+    private static Map<Integer, PrintWriter> clientWriters = new HashMap<>();
 
     public static void main(String[] args) {
         try {
@@ -25,7 +27,7 @@ public class ChatServer {
                 nextPort++;
 
                 PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true);
-                clientWriters.add(writer);
+                clientWriters.put(clientPort, writer);
 
                 Thread clientThread = new Thread(new ClientHandler(clientSocket, writer, clientPort));
                 clientThread.start();
@@ -56,9 +58,25 @@ public class ChatServer {
                     String message = scanner.nextLine();
                     System.out.println("Mensaje recibido del puerto " + clientPort + ": " + message);
 
-                    for (PrintWriter clientWriter : clientWriters) {
-                        if (clientWriter != writer) {
-                            clientWriter.println("Desde el puerto " + clientPort + ": " + message);
+                    int separatorIndex = message.indexOf(":");
+                    if (separatorIndex != -1) {
+                        int targetPort = Integer.parseInt(message.substring(0, separatorIndex));
+                        String actualMessage = message.substring(separatorIndex + 1);
+
+                        for (Map.Entry<Integer, PrintWriter> entry : clientWriters.entrySet()) {
+                            int receiverPort = entry.getKey();
+                            PrintWriter clientWriter = entry.getValue();
+                            if (receiverPort == targetPort && clientWriter != writer) {
+                                clientWriter.println("Desde el puerto " + clientPort + ": " + actualMessage);
+                            }
+                        }
+                    } else {
+                        for (Map.Entry<Integer, PrintWriter> entry : clientWriters.entrySet()) {
+                            int receiverPort = entry.getKey();
+                            PrintWriter clientWriter = entry.getValue();
+                            if (receiverPort != clientPort) {
+                                clientWriter.println("Desde el puerto " + clientPort + ": " + message);
+                            }
                         }
                     }
                 }
