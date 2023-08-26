@@ -1,3 +1,6 @@
+/**
+ * @author Fabricio Mena y Pablo Araya
+ */
 import javafx.application.Application; 
 import javafx.geometry.Pos; 
 import javafx.scene.Scene; 
